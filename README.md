@@ -65,9 +65,31 @@ All scripts are designed to be run from the **project root**.
 
 ## Workflow — Sport ↔ Toy
 
+
 ### Step 1 — Data Preparation
 
 Run the full preprocessing pipeline on the raw Amazon Reviews 2023 data:
+
+**1. Download the raw data** from [Amazon Reviews 2023](https://amazon-reviews-2023.github.io/). You need four files:
+
+| File | Type |
+|------|------|
+| `Sports_and_Outdoors.jsonl` | Review data |
+| `Toys_and_Games.jsonl` | Review data |
+| `meta_Sports_and_Outdoors.jsonl` | Item metadata |
+| `meta_Toys_and_Games.jsonl` | Item metadata |
+
+**2. Place all four files** into `data/preprocess/`:
+
+```
+data/preprocess/
+├── Sports_and_Outdoors.jsonl
+├── Toys_and_Games.jsonl
+├── meta_Sports_and_Outdoors.jsonl
+└── meta_Toys_and_Games.jsonl
+```
+
+**3. Run the preprocessing pipeline:**
 
 ```bash
 bash scripts/prepare_data.sh
@@ -102,7 +124,7 @@ Adapters are saved to `saft_output/sport/`, `saft_output/toy/`, and `saft_output
 
 > **Pre-trained adapters available.** To skip training, download our adapters from Google Drive and place them under `models/ST/`:
 >
-> [https://drive.google.com/drive/folders/1uco6LQYNbyG4FCUD-nYgKbb2rCtGMDfv?usp=drive_link](https://drive.google.com/drive/folders/1uco6LQYNbyG4FCUD-nYgKbb2rCtGMDfv?usp=drive_link)
+> [Google Drive](https://drive.google.com/drive/folders/1uco6LQYNbyG4FCUD-nYgKbb2rCtGMDfv?usp=drive_link)
 >
 > Expected layout: `models/ST/sport/`, `models/ST/toy/`, `models/ST/sport_toy/`
 
