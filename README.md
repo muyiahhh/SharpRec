@@ -101,22 +101,11 @@ The pipeline runs six stages: JSONL→CSV conversion → interaction filtering �
 
 ### Step 2 — SGA Training
 
-Train three LoRA adapters (sport, toy, sport\_toy) with SAM optimization. Fine-tuning toward flat minima ensures geometric compatibility when the adapters are later merged (SGA, Section 4.2 of the paper).
+Train three LoRA adapters (sport, toy, sport\_toy) with SAM optimization. Fine-tuning toward flat minima ensures geometric compatibility when the adapters are later merged (SGA).
 
 ```bash
 bash scripts/run_sga_train.sh
 ```
-
-Key hyperparameters (Section 5.1.4):
-
-| Parameter | Value |
-|-----------|-------|
-| Backbone | Llama-2-7b-chat-hf |
-| Epochs | 2 |
-| Learning rate | 2×10⁻⁴ |
-| LoRA rank / alpha | 16 / 32 |
-| SAM perturbation ρ | 0.01 |
-| Effective batch size | 8 |
 
 Adapters are saved to `saft_output/sport/`, `saft_output/toy/`, and `saft_output/sport_toy/`.
 
@@ -127,7 +116,7 @@ Adapters are saved to `saft_output/sport/`, `saft_output/toy/`, and `saft_output
 
 ### Step 3 — PSA Inference
 
-Merge the trained adapters and apply Preference Salience Activation to recover heavy-tailed parameter distributions before inference (PSA, Section 4.3 of the paper).
+Merge the trained adapters and apply Preference Salience Activation to recover heavy-tailed parameter distributions before inference (PSA).
 
 ```bash
 bash scripts/run_psa_infer.sh
@@ -142,14 +131,6 @@ The pipeline runs four stages for each target domain:
 | 3 | `psa.py` | Apply PSA non-linear reparameterization to ΔW |
 | 4 | `vllmtest.py` | vLLM inference on the PSA model |
 
-PSA hyperparameters (paper defaults):
-
-| Parameter | Symbol | Value |
-|-----------|--------|-------|
-| Gaussian noise std | σ_g | 0.0001 |
-| Tail-heaviness exponent | γ | 0.98 |
-| Smoothness coefficient | α | 0.1 |
-| Decay coefficient | β | 10 |
 
 Results are written to `result/sport-toy/{sport,toy}/output/`.
 
