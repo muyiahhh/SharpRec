@@ -59,8 +59,6 @@ pip install -r requirements.txt
 
 The backbone used in all experiments is **Llama-2-7b-chat-hf**. Download it and place it under `models/meta-llama/Llama-2-7b-chat-hf/`, then set `BASE_MODEL_PATH` at the top of each script accordingly.
 
-All scripts are designed to be run from the **project root**.
-
 ---
 
 ## Workflow — Sport ↔ Toy
@@ -122,10 +120,7 @@ Key hyperparameters (Section 5.1.4):
 
 Adapters are saved to `saft_output/sport/`, `saft_output/toy/`, and `saft_output/sport_toy/`.
 
-> **Pre-trained adapters available.** To skip training, download our adapters from Google Drive and place them under `models/ST/`:
->
-> [Google Drive](https://drive.google.com/drive/folders/1uco6LQYNbyG4FCUD-nYgKbb2rCtGMDfv?usp=drive_link)
->
+> **Pre-trained adapters available.** To skip training, download our adapters from Google Drive and place them under `models/ST/`:[Google Drive](https://drive.google.com/drive/folders/1uco6LQYNbyG4FCUD-nYgKbb2rCtGMDfv?usp=drive_link)
 > Expected layout: `models/ST/sport/`, `models/ST/toy/`, `models/ST/sport_toy/`
 
 ---
@@ -169,13 +164,6 @@ Compute HR@k, NDCG@k, and MRR@k on the inference outputs:
 ```bash
 bash scripts/run_metric.sh
 ```
-
-Expected results on Sport ↔ Toy (Table 2 in the paper, expressed as %):
-
-| Task | HR@3 | NDCG@3 | HR@5 | NDCG@5 | MRR |
-|------|------|--------|------|--------|-----|
-| Toy → Sport | 76.14 | 74.26 | 78.78 | 75.34 | 74.21 |
-| Sport → Toy | 66.34 | 63.88 | 71.66 | 66.05 | 64.23 |
 
 ---
 
