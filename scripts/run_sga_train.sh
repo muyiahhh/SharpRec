@@ -7,7 +7,7 @@
 # can be merged without geometric parameter interference.
 #
 # Run from the project root:  bash scripts/run_sga_train.sh
-# Output: saft_output/{sport,toy,sport_toy}/
+# Output: models/ST/{sport,toy,sport_toy}/
 # =============================================================
 
 # Prevent CUDA allocator fragmentation on long training runs
@@ -18,7 +18,7 @@ export CUDA_VISIBLE_DEVICES=0
 
 BASE_MODEL_PATH="models/meta-llama/Llama-2-7b-chat-hf"
 TRAIN_DATA_DIR="data/processed/traindata"
-OUTPUT_DIR="saft_output"
+OUTPUT_DIR="models/ST"
 
 # SAM perturbation radius (ρ)
 RHO=0.01
