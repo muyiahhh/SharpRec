@@ -8,12 +8,14 @@ Official implementation of the KDD '26 paper:
 
 ## Overview
 
-SharpRec tackles two fundamental bottlenecks that limit existing LLM-based CDSR model-merging approaches:
+SharpRec tackles two fundamental bottlenecks that arise when merging domain-specific LLM adapters for cross-domain sequential recommendation:
 
 | Bottleneck | Cause | SharpRec Module |
 |------------|-------|-----------------|
 | **B1** Cross-domain knowledge conflict | Geometric incompatibility of domain-specific adapters | **SGA** — Sharpness-aware Geometric Alignment |
 | **B2** Performance saturation in multi-domain fusion | Statistical homogenization of merged parameters | **PSA** — Preference Salience Activation |
+
+This repository uses the **Sport ↔ Toy** (Amazon Reviews 2023) pair as the running example.
 
 ## Repository Structure
 
@@ -21,12 +23,19 @@ SharpRec tackles two fundamental bottlenecks that limit existing LLM-based CDSR 
 SharpRec/
 ├── data/
 │   ├── preprocess/          # Preprocessing pipeline scripts (_0–_6, prepareData)
-│   ├── raw/                 # Place raw Amazon Review 2023 files here
-│   └── processed/           # Output: traindata/ and testdata/
+│   ├── raw/                 # Place raw Amazon Review 2023 files here (if preprocessing from scratch)
+│   └── processed/           # ✅ Included: traindata/ and testdata/ for Sport & Toy
+├── result/
+│   └── sport-toy/           # ✅ Included: pre-computed vLLM inference outputs
+│       ├── sport/output/output.jsonl
+│       └── toy/output/output.jsonl
+├── models/
+│   ├── meta-llama/          # Place Llama-2-7b-chat-hf here
+│   └── ST/                  # Place downloaded adapters here (sport/, toy/, sport_toy/)
 ├── scripts/
 │   ├── prepare_data.sh      # Step 1: Data preprocessing
-│   ├── run_sga_train.sh     # Step 2: SGA training
-│   ├── run_psa_infer.sh     # Step 3: PSA inference
+│   ├── run_sga_train.sh     # Step 2: SGA adapter training
+│   ├── run_psa_infer.sh     # Step 3: PSA inference pipeline
 │   └── run_metric.sh        # Step 4: Evaluation
 └── src/
     ├── main.py              # SGA training entry point
@@ -35,7 +44,7 @@ SharpRec/
     ├── data_moudle.py       # Dataset and collator utilities
     ├── init_weights_robust.py
     ├── merge_weights.py
-    ├── psa.py               # PSA post-processing
+    ├── psa.py               # PSA post-fusion reparameterization
     ├── vllmtest.py          # vLLM inference
     └── metrics.py           # HR / NDCG / MRR evaluation
 ```
@@ -48,65 +57,37 @@ cd SharpRec
 pip install -r requirements.txt
 ```
 
-The backbone model used in all experiments is **Llama-2-7b-chat-hf**. Set its local path via the `BASE_MODEL_PATH` variable at the top of each script.
-
----
-
-## Workflow — Sport ↔ Toy Example
+The backbone used in all experiments is **Llama-2-7b-chat-hf**. Download it and place it under `models/meta-llama/Llama-2-7b-chat-hf/`, then set `BASE_MODEL_PATH` at the top of each script accordingly.
 
 All scripts are designed to be run from the **project root**.
 
+---
+
+## Workflow — Sport ↔ Toy
+
 ### Step 1 — Data Preparation
 
-**Option A: Use our pre-processed Sport-Toy data (recommended)**
-
-Download and place the files as follows:
-
-```
-data/processed/traindata/sport.jsonl
-data/processed/traindata/toy.jsonl
-data/processed/traindata/sport_toy.jsonl
-data/processed/testdata/sport.jsonl
-data/processed/testdata/toy.jsonl
-```
-
-> **Download link**: [TODO — Google Drive](#)
-
-Then skip to Step 2.
-
-**Option B: Preprocess from scratch**
-
-1. Download the `review_Sports_and_Outdoors.jsonl` and `review_Toys_and_Games.jsonl` (with their corresponding `meta_*.jsonl` files) from [Amazon Reviews 2023](https://amazon-reviews-2023.github.io/).
-
-2. Place them under `data/raw/review_categories/` and `data/raw/meta_categories/`.
-
-3. Run the full preprocessing pipeline:
+Run the full preprocessing pipeline on the raw Amazon Reviews 2023 data:
 
 ```bash
 bash scripts/prepare_data.sh
 ```
 
-The pipeline runs six stages: JSONL→CSV conversion → interaction filtering → item and user filtering → cross-domain sequence construction → subsequence sampling → iterative k-core cleaning. Final outputs are written to `data/processed/`.
+The pipeline runs six stages: JSONL→CSV conversion → interaction filtering → item and user filtering → cross-domain sequence construction → subsequence sampling → iterative k-core cleaning. Outputs are written to `data/processed/`.
+
+> **Pre-processed data already included.** The processed Sport and Toy files are committed to this repository under `data/processed/traindata/` and `data/processed/testdata/`. You can skip this step entirely.
 
 ---
 
 ### Step 2 — SGA Training
 
-Train three LoRA adapters (sport, toy, sport\_toy) with SAM optimization. Fine-tuning toward flat minima establishes a stable geometric foundation that prevents parameter interference during merging (SGA, Section 4.2).
-
-**Option A: Use our pre-trained adapters (recommended)**
-
-> **Download link**: [TODO — Google Drive](#)
-
-Place the downloaded adapters under `saft_output/sport/`, `saft_output/toy/`, and `saft_output/sport_toy/`, then skip to Step 3.
-
-**Option B: Train from scratch**
+Train three LoRA adapters (sport, toy, sport\_toy) with SAM optimization. Fine-tuning toward flat minima ensures geometric compatibility when the adapters are later merged (SGA, Section 4.2 of the paper).
 
 ```bash
 bash scripts/run_sga_train.sh
 ```
 
-Key hyperparameters (paper Section 5.1.4):
+Key hyperparameters (Section 5.1.4):
 
 | Parameter | Value |
 |-----------|-------|
@@ -117,35 +98,31 @@ Key hyperparameters (paper Section 5.1.4):
 | SAM perturbation ρ | 0.01 |
 | Effective batch size | 8 |
 
-Training produces three adapters saved to `saft_output/`.
+Adapters are saved to `saft_output/sport/`, `saft_output/toy/`, and `saft_output/sport_toy/`.
+
+> **Pre-trained adapters available.** To skip training, download our adapters from Google Drive and place them under `models/ST/`:
+>
+> [https://drive.google.com/drive/folders/1uco6LQYNbyG4FCUD-nYgKbb2rCtGMDfv?usp=drive_link](https://drive.google.com/drive/folders/1uco6LQYNbyG4FCUD-nYgKbb2rCtGMDfv?usp=drive_link)
+>
+> Expected layout: `models/ST/sport/`, `models/ST/toy/`, `models/ST/sport_toy/`
 
 ---
 
 ### Step 3 — PSA Inference
 
-Merge the domain-specific adapters and apply Preference Salience Activation to recover heavy-tailed parameter distributions before inference (PSA, Section 4.3).
-
-**Option A: Use our pre-computed inference outputs**
-
-> **Download link**: [TODO — Google Drive](#)
-
-Place the downloaded outputs under `result/sport-toy/sport/output/` and `result/sport-toy/toy/output/`, then skip to Step 4.
-
-**Option B: Run inference yourself**
-
-Configure the adapter paths at the top of `scripts/run_psa_infer.sh`, then:
+Merge the trained adapters and apply Preference Salience Activation to recover heavy-tailed parameter distributions before inference (PSA, Section 4.3 of the paper).
 
 ```bash
 bash scripts/run_psa_infer.sh
 ```
 
-The pipeline runs the following four stages for each target domain:
+The pipeline runs four stages for each target domain:
 
 | Stage | Script | Description |
 |-------|--------|-------------|
 | 1 | `init_weights_robust.py` | Compute per-parameter fusion weights |
 | 2 | `merge_weights.py` | Fuse adapters into a full merged model |
-| 3 | `psa.py` | Apply PSA non-linear reparameterization |
+| 3 | `psa.py` | Apply PSA non-linear reparameterization to ΔW |
 | 4 | `vllmtest.py` | vLLM inference on the PSA model |
 
 PSA hyperparameters (paper defaults):
@@ -157,11 +134,15 @@ PSA hyperparameters (paper defaults):
 | Smoothness coefficient | α | 0.1 |
 | Decay coefficient | β | 10 |
 
+Results are written to `result/sport-toy/{sport,toy}/output/`.
+
+> **Pre-computed inference outputs already included.** The vLLM outputs for both domains are committed to this repository under `result/sport-toy/`. You can skip this step and proceed directly to evaluation.
+
 ---
 
 ### Step 4 — Evaluation
 
-Compute HR@k, NDCG@k, and MRR@k on the inference outputs from Step 3:
+Compute HR@k, NDCG@k, and MRR@k on the inference outputs:
 
 ```bash
 bash scripts/run_metric.sh
@@ -187,3 +168,9 @@ Expected results on Sport ↔ Toy (Table 2 in the paper, expressed as %):
   doi       = {10.1145/3770855.3817945}
 }
 ```
+
+---
+
+## Acknowledgement
+
+This codebase builds upon [WeaveRec](https://github.com/mertell/WeaveRec) (LLM-Based Cross-Domain Sequential Recommendation with Negative Transfer Mitigation). We thank the authors for releasing their code.
