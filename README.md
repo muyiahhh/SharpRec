@@ -109,8 +109,7 @@ bash scripts/run_sga_train.sh
 
 Adapters are saved to `saft_output/sport/`, `saft_output/toy/`, and `saft_output/sport_toy/`.
 
-> **Pre-trained adapters available.** To skip training, download our adapters from Google Drive and place them under `models/ST/`:[Google Drive](https://drive.google.com/drive/folders/1uco6LQYNbyG4FCUD-nYgKbb2rCtGMDfv?usp=drive_link)
-
+> **Pre-trained adapters available.** To skip training, download our adapters from Google Drive and place them under `models/ST/`:[Google Drive](https://drive.google.com/drive/folders/1uco6LQYNbyG4FCUD-nYgKbb2rCtGMDfv?usp=drive_link). 
 > Expected layout: `models/ST/sport/`, `models/ST/toy/`, `models/ST/sport_toy/`
 
 ---
